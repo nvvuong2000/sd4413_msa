@@ -1,7 +1,5 @@
 pipeline {
-    agent {
-        label 'devops-prac'
-    }
+    agent any
     environment {
         FRONTEND_IMAGE_NAME = "practical-devops-frontend"
         BACKEND_IMAGE_NAME = "practical-devops-backend"
