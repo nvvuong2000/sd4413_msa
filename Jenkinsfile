@@ -25,7 +25,7 @@ pipeline {
         stage('Build Front End Image') {
             steps {
                 echo "Building Frontend Image..."
-                    sh "docker build -t ${FRONTEND_IMAGE_NAME}:latest -f src/frontend/Dockerfile ."
+                    sh "docker build -t ${FRONTEND_IMAGE_NAME}:latest -f src/frontend"
                     sh "docker tag ${FRONTEND_IMAGE_NAME}:latest ${ECR_URI}:${FRONTEND_TAG}"
                     sh "docker push ${ECR_URI}:${FRONTEND_TAG}"
             }
@@ -34,7 +34,7 @@ pipeline {
         stage('Build Back End Image') {
             steps {
                 echo "Building Backend Image..."
-                    sh "docker build -t ${BACKEND_IMAGE_NAME}:latest -f src/backend/Dockerfile ."
+                    sh "docker build -t ${BACKEND_IMAGE_NAME}:latest -f src/backend"
                     sh "docker tag ${BACKEND_IMAGE_NAME}:latest ${ECR_URI}:${BACKEND_TAG}"
                     sh "docker push ${ECR_URI}:${BACKEND_TAG}"
             }
