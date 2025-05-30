@@ -1,0 +1,113 @@
+trigger:
+- master
+variables:
+  dockerHubRegistry: vuongnguyenv
+  acrRegistry: msapracticeacr.azurecr.io
+  buildTag: $(Build.BuildId)
+
+stages:
+# -------- DATABASE ----------
+- stage: DeployDb
+  jobs:
+  - job: DeployDb
+    pool:
+      name: Default
+    steps:
+    - task: Kubernetes@1
+      displayName: Deploy MongoDB
+      inputs:
+        connectionType: 'Azure Resource Manager'
+        azureSubscriptionEndpoint: 'aksServiceConnection'
+        azureResourceGroup: 'sd4413-practical-devops-resource-group'
+        kubernetesCluster: 'msa-aks-cluster'
+        namespace: default
+        command: apply
+        useConfigurationFile: true
+        configuration: k8s/az/mongo-deployment.yaml
+# -------- FRONTEND ----------
+- stage: FrontendBuildAndPush
+  jobs:
+  - job: BuildPushFrontend
+    pool:
+      name: Default
+    steps:
+    - task: Docker@2
+      displayName: Build & Push to Docker Hub
+      inputs:
+        containerRegistry: 'dockerHubServiceConnection'
+        repository: '$(dockerHubRegistry)/frontend'
+        dockerfile: 'src/frontend/Dockerfile'
+        tags: |
+          $(buildTag)
+
+    - task: Docker@2
+      displayName: Push to ACR
+      inputs:
+        containerRegistry: 'ACRDockerConnection1'
+        repository: '$(acrRegistry)/frontend'
+        dockerfile: 'src/frontend/Dockerfile'
+        tags: |
+          $(buildTag)
+
+- stage: FrontendDeploy
+  dependsOn: FrontendBuildAndPush
+  jobs:
+  - job: DeployFrontend
+    pool:
+      name: Default
+    steps:
+    - task: Kubernetes@1
+      displayName: Deploy Frontend to AKS
+      inputs:
+        connectionType: 'Azure Resource Manager'
+        azureSubscriptionEndpoint: 'aksServiceConnection'
+        azureResourceGroup: 'sd4413-practical-devops-resource-group'
+        kubernetesCluster: 'msa-aks-cluster'
+        namespace: 'default'
+        command: apply
+        useConfigurationFile: true
+        configuration: k8s/az/frontend.yaml
+
+# -------- BACKEND ----------
+- stage: BackendBuildAndPush
+  jobs:
+  - job: BuildPushBackend
+    pool:
+      name: Default
+    steps:
+    - task: Docker@2
+      displayName: Build & Push to Docker Hub
+      inputs:
+        containerRegistry: 'dockerHubServiceConnection'
+        repository: '$(dockerHubRegistry)/backend'
+        dockerfile: 'src/backend/Dockerfile'
+        tags: |
+          $(buildTag)
+
+    - task: Docker@2
+      displayName: Push to ACR
+      inputs:
+        containerRegistry: 'ACRDockerConnection1'
+        repository: '$(acrRegistry)/backend'
+        dockerfile: 'src/backend/Dockerfile'
+        tags: |
+          $(buildTag)
+
+- stage: BackendDeploy
+  dependsOn: BackendBuildAndPush
+  jobs:
+  - job: DeployBackend
+    pool:
+      name: Default
+    steps:
+    - task: Kubernetes@1
+      displayName: Deploy Backend to AKS
+      inputs:
+        connectionType: 'Azure Resource Manager'
+        azureSubscriptionEndpoint: 'aksServiceConnection'
+        azureResourceGroup: 'sd4413-practical-devops-resource-group'
+        kubernetesCluster: 'msa-aks-cluster'
+        namespace: 'default'
+        command: apply
+        useConfigurationFile: true
+        configuration: k8s/az/backend.yaml

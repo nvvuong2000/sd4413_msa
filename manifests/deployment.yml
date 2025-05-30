@@ -1,0 +1,19 @@
+apiVersion : apps/v1
+kind: Deployment
+metadata:
+  name: sddevopsfordevs 
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sddevopsfordevs
+  template:
+    metadata:
+      labels:
+        app: sddevopsfordevs 
+    spec:
+      containers:
+        - name: sddevopsfordevs 
+          image: msapracticeacr.azurecr.io/sddevopsfordevs:${IMAGE_TAG}
+          ports:
+          - containerPort: 3000
